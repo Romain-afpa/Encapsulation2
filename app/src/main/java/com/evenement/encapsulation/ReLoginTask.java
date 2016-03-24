@@ -6,7 +6,6 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.util.Log;
 import android.webkit.CookieManager;
-import android.webkit.WebView;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -28,12 +27,11 @@ import javax.net.ssl.SSLContext;
 /**
  * Created by romain on 21/03/16.
  */
-public class LoginTask extends AsyncTask<String, String, String> {
+public class ReLoginTask extends AsyncTask<String, String, String> {
 
     private HttpsURLConnection connection = null;
     private URL url = null;
     private InputStream stream = null;
-    private WebView webView;
     private String csrfToken;
     private Context context;
     private ProgressDialog dialog;
@@ -43,20 +41,15 @@ public class LoginTask extends AsyncTask<String, String, String> {
     private String _URL;
 
 
-    public LoginTask(WebView webView, Context context) {
+    public ReLoginTask(Context context) {
 
-        this.webView = webView;
         this.context = context;
     }
 
     @Override
-    protected void onPreExecute() {
-        super.onPreExecute();
-        showProgressDialog();
-    }
-
-    @Override
     protected String doInBackground(String... params) {
+
+        Log.d("aa", "execute");
 
         _URL = params[0];
 
@@ -69,8 +62,6 @@ public class LoginTask extends AsyncTask<String, String, String> {
     protected void onPostExecute(String data) {
         super.onPostExecute(data);
 
-        webView.loadUrl("https://dev3.libre-informatique.fr/tck.php/ticket/control");
-        hideProgressDialog();
     }
 
     private String readStream(InputStream stream) {
@@ -171,6 +162,7 @@ public class LoginTask extends AsyncTask<String, String, String> {
     private boolean postLogin(String uri) {
 
         InputStream input = null;
+
         URL url = null;
 
         try {
@@ -225,23 +217,5 @@ public class LoginTask extends AsyncTask<String, String, String> {
         parseResponse(html);
 
         return postLogin(url);
-    }
-
-    private void showProgressDialog(){
-
-        if(dialog == null) {
-            dialog = new ProgressDialog(context);
-            dialog.setTitle(context.getString(R.string.progressDialogTitle));
-            dialog.setMessage(context.getString(R.string.progressDialogMessage));
-        }
-        dialog.show();
-    }
-
-    private void hideProgressDialog() {
-
-        if(dialog.isShowing()){
-
-            dialog.hide();
-        }
     }
 }//taskClass

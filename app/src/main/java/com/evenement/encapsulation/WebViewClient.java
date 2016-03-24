@@ -2,12 +2,19 @@ package com.evenement.encapsulation;
 
 import android.graphics.Bitmap;
 import android.net.http.SslError;
+import android.os.Build;
+import android.preference.PreferenceActivity;
 import android.util.Log;
 import android.webkit.CookieManager;
 import android.webkit.CookieSyncManager;
 import android.webkit.SslErrorHandler;
+import android.webkit.WebResourceError;
+import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.net.CookieHandler;
 
 /**

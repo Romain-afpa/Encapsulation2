@@ -24,6 +24,10 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 
 import java.net.CookieHandler;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -63,7 +67,7 @@ public class MainActivity extends AppCompatActivity {
 
         checkNetwork();
 
-
+        keepSessionAlive();
     }
 
     @Override
@@ -131,7 +135,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(DialogInterface dialog, int which) {
 
-               checkNetwork();
+                checkNetwork();
             }
         });
         alertDialog.setButton(DialogInterface.BUTTON_NEGATIVE, "Annuler", new DialogInterface.OnClickListener() {
@@ -164,5 +168,22 @@ public class MainActivity extends AppCompatActivity {
         }else{
             loginTask.execute(url);
         }
+    }
+
+    private void keepSessionAlive(){
+
+        long delay = 1000*60*5;
+
+        Timer timer = new Timer();
+
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                new ReLoginTask(MainActivity.this).execute(url);
+
+            }
+        },delay, delay);
+
+
     }
 }
