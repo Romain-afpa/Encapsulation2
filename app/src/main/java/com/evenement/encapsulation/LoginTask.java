@@ -1,17 +1,11 @@
 package com.evenement.encapsulation;
 
+import android.app.ProgressDialog;
 import android.content.Context;
-import android.content.DialogInterface;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.AsyncTask;
-import android.os.Looper;
-import android.os.StrictMode;
-import android.support.v7.app.AlertDialog;
 import android.util.Log;
 import android.webkit.CookieManager;
-import android.webkit.CookieSyncManager;
 import android.webkit.WebView;
 
 import org.jsoup.Jsoup;
@@ -42,13 +36,12 @@ public class LoginTask extends AsyncTask<String, String, String> {
     private WebView webView;
     private String csrfToken;
     private Context context;
+    private ProgressDialog dialog;
     private String formAction;
     private final String username = "librinfo";
     private final String password = "cR4MP0u=€";
     private String _URL;
 
-    public LoginTask() {
-    }
 
     public LoginTask(WebView webView, Context context) {
 
@@ -56,6 +49,11 @@ public class LoginTask extends AsyncTask<String, String, String> {
         this.context = context;
     }
 
+    @Override
+    protected void onPreExecute() {
+        super.onPreExecute();
+        showProgressDialog();
+    }
 
     @Override
     protected String doInBackground(String... params) {
@@ -72,6 +70,8 @@ public class LoginTask extends AsyncTask<String, String, String> {
         super.onPostExecute(data);
 
         webView.loadUrl("https://dev3.libre-informatique.fr/tck.php/ticket/control");
+
+        hideProgressDialog();
     }
 
     private String readStream(InputStream stream) {
@@ -227,5 +227,22 @@ public class LoginTask extends AsyncTask<String, String, String> {
         parseResponse(html);
 
         return postLogin(url);
+    }
+
+    private void showProgressDialog(){
+        if(dialog == null) {
+            dialog = new ProgressDialog(context);
+            dialog.setTitle(context.getString(R.string.progressDialogTitle));
+            dialog.setMessage(context.getString(R.string.progressDialogMessage));
+        }
+        dialog.show();
+    }
+
+    private void hideProgressDialog() {
+
+        if(dialog.isShowing()){
+
+            dialog.hide();
+        }
     }
 }//taskClass

@@ -7,4 +7,6 @@
     <string name="action_settings">Settings</string>
     <string name="nav_header_email">lambda@e-venement.net</string>
     <string name="nav_header_user">e-venement</string>
+    <string name="progressDialogTitle">Connexion en cours</string>
+    <string name="progressDialogMessage">Veuillez patienter</string>
 </resources>
