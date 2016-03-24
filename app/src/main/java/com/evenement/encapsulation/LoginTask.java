@@ -1,11 +1,14 @@
 package com.evenement.encapsulation;
 
 import android.content.Context;
+import android.content.DialogInterface;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Looper;
 import android.os.StrictMode;
+import android.support.v7.app.AlertDialog;
 import android.util.Log;
 import android.webkit.CookieManager;
 import android.webkit.CookieSyncManager;
@@ -59,12 +62,8 @@ public class LoginTask extends AsyncTask<String, String, String> {
 
         _URL = params[0];
 
-        if (hasInternet()) {
-            login(_URL);
-        } else {
+        login(_URL);
 
-
-        }
         return "";
     }
 
@@ -228,17 +227,5 @@ public class LoginTask extends AsyncTask<String, String, String> {
         parseResponse(html);
 
         return postLogin(url);
-    }
-
-    private boolean hasInternet() {
-
-        ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-
-        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
-
-        boolean isConnected = activeNetwork != null &&
-                activeNetwork.isConnectedOrConnecting();
-
-        return isConnected;
     }
 }//taskClass

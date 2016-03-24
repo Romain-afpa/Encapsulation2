@@ -1,6 +1,8 @@
 package com.evenement.encapsulation;
 
 import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Build;
@@ -10,6 +12,7 @@ import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -27,6 +30,7 @@ public class MainActivity extends AppCompatActivity {
     private WebView webView;
     private WebSettings settings;
     private LoginTask loginTask;
+    private final String url = "https://dev3.libre-informatique.fr/tck.php/ticket/control";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,8 +59,11 @@ public class MainActivity extends AppCompatActivity {
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(new navItemListener(MainActivity.this, drawer));
 
+        loginTask = new LoginTask(webView, MainActivity.this);
 
-        new LoginTask().execute("https://dev3.libre-informatique.fr/tck.php/ticket/control");
+        checkNetwork();
+
+
     }
 
     @Override
@@ -111,5 +118,51 @@ public class MainActivity extends AppCompatActivity {
         WebCookieManager coreCookieManager = new WebCookieManager(null, java.net.CookiePolicy.ACCEPT_ALL);
 
         java.net.CookieHandler.setDefault(coreCookieManager);
+    }
+
+    private void showDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+        AlertDialog alertDialog = builder.create();
+
+        alertDialog.setTitle("Erreur réseau");
+        alertDialog.setMessage("Connexion Réseau indisponible");
+
+        alertDialog.setButton(DialogInterface.BUTTON_POSITIVE, "Réessayer", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+
+               checkNetwork();
+            }
+        });
+        alertDialog.setButton(DialogInterface.BUTTON_NEGATIVE, "Annuler", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+
+                System.exit(0);
+            }
+        });
+        alertDialog.show();
+    }
+
+    private boolean hasInternet() {
+
+        ConnectivityManager cm = (ConnectivityManager) MainActivity.this.getSystemService(Context.CONNECTIVITY_SERVICE);
+
+        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+
+        boolean isConnected = activeNetwork != null &&
+                activeNetwork.isConnectedOrConnecting();
+
+        return isConnected;
+    }
+
+    private void checkNetwork(){
+
+        if (!hasInternet()) {
+
+            showDialog();
+        }else{
+            loginTask.execute(url);
+        }
     }
 }
