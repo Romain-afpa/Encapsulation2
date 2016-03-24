@@ -1,5 +1,8 @@
 package com.evenement.encapsulation;
 
+import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.StrictMode;
@@ -35,40 +38,41 @@ public class LoginTask extends AsyncTask<String, String, String> {
     private InputStream stream = null;
     private WebView webView;
     private String csrfToken;
+    private Context context;
     private String formAction;
     private final String username = "librinfo";
     private final String password = "cR4MP0u=€";
+    private String _URL;
 
     public LoginTask() {
     }
 
-    public LoginTask(WebView webView) {
+    public LoginTask(WebView webView, Context context) {
 
         this.webView = webView;
+        this.context = context;
     }
 
 
     @Override
     protected String doInBackground(String... params) {
 
-        String html = readStream(getConnectionStream(params[0]));
+        _URL = params[0];
 
-        parseResponse(html);
+        if (hasInternet()) {
+            login(_URL);
+        } else {
 
-        String pageContent = readStream(postLogin(params[0]));
 
-        return pageContent;
+        }
+        return "";
     }
 
     @Override
     protected void onPostExecute(String data) {
         super.onPostExecute(data);
 
-        //postLogin("https://dev3.libre-informatique.fr" + formAction);
-
-
-        webView.loadDataWithBaseURL("https://dev3.libre-informatique.fr/tck.php/ticket/control", data, "text/html; charset=UTF-8",null, "https://dev3.libre-informatique.fr/tck.php/ticket/control");
-
+        webView.loadUrl("https://dev3.libre-informatique.fr/tck.php/ticket/control");
     }
 
     private String readStream(InputStream stream) {
@@ -134,12 +138,6 @@ public class LoginTask extends AsyncTask<String, String, String> {
             }
         } catch (IOException e) {
             e.printStackTrace();
-
-        }finally{
-            if(connection != null){
-
-                //connection.disconnect();
-            }
         }
         return stream;
     }
@@ -172,11 +170,9 @@ public class LoginTask extends AsyncTask<String, String, String> {
         formAction = formTag.attr("action");
     }
 
-    private InputStream postLogin(String uri) {
+    private boolean postLogin(String uri) {
 
         InputStream input = null;
-
-        String cookies = CookieManager.getInstance().getCookie(uri);
 
         URL url = null;
 
@@ -200,21 +196,19 @@ public class LoginTask extends AsyncTask<String, String, String> {
             writer.flush();
 
             connection.connect();
+
+            Log.d("aa", "cookiePost: " + CookieManager.getInstance().getCookie("https://dev3.libre-informatique.fr"));
             Log.d("aa", connection.getResponseCode() + "");
             Log.d("aa", connection.getResponseMessage() + "");
 
-            if(connection.getResponseCode() == 200){
+            if (connection.getResponseCode() == 200) {
 
-                input = connection.getInputStream();
-            }else{
-                input =  connection.getErrorStream();
+                return true;
             }
-
-
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return input;
+        return false;
     }
 
     private String getQuery() {
@@ -225,5 +219,26 @@ public class LoginTask extends AsyncTask<String, String, String> {
                 .appendQueryParameter("signin[_csrf_token]", csrfToken);
 
         return builder.build().getEncodedQuery();
+    }
+
+    private boolean login(String url) {
+
+        String html = readStream(getConnectionStream(url));
+
+        parseResponse(html);
+
+        return postLogin(url);
+    }
+
+    private boolean hasInternet() {
+
+        ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+
+        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+
+        boolean isConnected = activeNetwork != null &&
+                activeNetwork.isConnectedOrConnecting();
+
+        return isConnected;
     }
 }//taskClass

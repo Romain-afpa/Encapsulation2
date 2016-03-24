@@ -1,5 +1,9 @@
 package com.evenement.encapsulation;
 
+import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.StrictMode;
 import android.support.design.widget.NavigationView;
@@ -22,21 +26,17 @@ public class MainActivity extends AppCompatActivity {
 
     private WebView webView;
     private WebSettings settings;
-    private CookieManager cookieManager;
     private LoginTask loginTask;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-
-        StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
-        StrictMode.setThreadPolicy(policy);
-
-        CookieHandler.setDefault(new java.net.CookieManager());
-        CookieSyncManager.createInstance(MainActivity.this);
+        setupCookieManager();
 
         setContentView(R.layout.activity_main);
+
+        setupWebview();
 
         //actionbar
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
@@ -55,31 +55,8 @@ public class MainActivity extends AppCompatActivity {
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(new navItemListener(MainActivity.this, drawer));
 
-        configWebview();
 
-        loginTask = new LoginTask(webView);
-
-        webView.setWebViewClient(new WebViewClient());
-
-        cookieManager = CookieManager.getInstance();
-        String cookie = cookieManager.getCookie("https://dev3.libre-informatique.fr");
-
-        //if (!cookie.contains("symfony")){
-
-//Log.d("aa", "cookie absent");
-            //tâche de connexion
-
-           loginTask.execute("https://dev3.libre-informatique.fr/tck.php/ticket/control");
-        //}else{
-
-           // Log.d("aa", "cookie présent");
-
-        //}
-        CookieSyncManager.getInstance().sync();
-
-       // webView.loadUrl("https://dev3.libre-informatique.fr/tck.php/ticket/control");
-
-
+        new LoginTask().execute("https://dev3.libre-informatique.fr/tck.php/ticket/control");
     }
 
     @Override
@@ -114,12 +91,25 @@ public class MainActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    private void configWebview(){
+    private void setupWebview() {
 
         webView = (WebView) findViewById(R.id.webview);
         settings = webView.getSettings();
 
         settings.setJavaScriptEnabled(true);
-        settings.setDomStorageEnabled(true);
+
+        webView.setWebViewClient(new WebViewClient());
+    }
+
+
+    private void setupCookieManager() {
+
+        android.webkit.CookieSyncManager.createInstance(MainActivity.this);
+
+        android.webkit.CookieManager.getInstance().setAcceptCookie(true);
+
+        WebCookieManager coreCookieManager = new WebCookieManager(null, java.net.CookiePolicy.ACCEPT_ALL);
+
+        java.net.CookieHandler.setDefault(coreCookieManager);
     }
 }

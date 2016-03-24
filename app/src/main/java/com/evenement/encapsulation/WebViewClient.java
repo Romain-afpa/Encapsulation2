@@ -1,8 +1,14 @@
 package com.evenement.encapsulation;
 
+import android.graphics.Bitmap;
 import android.net.http.SslError;
+import android.util.Log;
+import android.webkit.CookieManager;
+import android.webkit.CookieSyncManager;
 import android.webkit.SslErrorHandler;
 import android.webkit.WebView;
+
+import java.net.CookieHandler;
 
 /**
  * Created by romain on 21/03/16.
@@ -18,5 +24,12 @@ public class WebViewClient extends android.webkit.WebViewClient {
 
         handler.proceed();
 
+    }
+
+    @Override
+    public void onPageStarted(WebView view, String url, Bitmap favicon) {
+        super.onPageStarted(view, url, favicon);
+        String cookies = android.webkit.CookieManager.getInstance().getCookie(url);
+        Log.d("aa", "cookiess:" + cookies);
     }
 }
