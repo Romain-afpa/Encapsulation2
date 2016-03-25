@@ -3,10 +3,13 @@ package com.evenement.encapsulation;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Parcel;
+import android.os.Parcelable;
 import android.os.StrictMode;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -16,6 +19,7 @@ import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.webkit.CookieSyncManager;
@@ -34,11 +38,26 @@ public class MainActivity extends AppCompatActivity {
     private WebView webView;
     private WebSettings settings;
     private LoginTask loginTask;
-    private final String url = "https://dev3.libre-informatique.fr/tck.php/ticket/control";
+    private KeepSessionTask keepSessionTask;
+    private SharedPreferences preferences;
+    private String username;
+    private String password;
+    private String server;
+    private DrawerLayout drawer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        setupSharedPreferences();
+
+SharedPreferences.Editor editor= preferences.edit();
+
+        editor.remove("username");
+        editor.remove("password");
+        editor.remove("server");
+        editor.clear();
+        editor.commit();
 
         setupCookieManager();
 
@@ -46,12 +65,18 @@ public class MainActivity extends AppCompatActivity {
 
         setupWebview();
 
+        loginTask = new LoginTask(webView, MainActivity.this, server, username, password);
+
+        checkNetwork();
+
+        keepSessionAlive();
+
         //actionbar
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
         //DrawerLayout
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
 
         //DrawerToggle
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
@@ -59,15 +84,12 @@ public class MainActivity extends AppCompatActivity {
         drawer.setDrawerListener(toggle);
         toggle.syncState();
 
-        //Listener Drawer
-        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
-        navigationView.setNavigationItemSelectedListener(new navItemListener(MainActivity.this, drawer));
+        //DrawerFragment
+        getFragmentManager()
+                .beginTransaction()
+                .replace(R.id.content_frame_new, new LeftFragment(drawer),
+                        "LeftFragment").commit();
 
-        loginTask = new LoginTask(webView, MainActivity.this);
-
-        checkNetwork();
-
-        keepSessionAlive();
     }
 
     @Override
@@ -124,14 +146,14 @@ public class MainActivity extends AppCompatActivity {
         java.net.CookieHandler.setDefault(coreCookieManager);
     }
 
-    private void showDialog() {
+    private void showDialog(String message, String action) {
         AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
         AlertDialog alertDialog = builder.create();
 
         alertDialog.setTitle("Erreur réseau");
-        alertDialog.setMessage("Connexion Réseau indisponible");
+        alertDialog.setMessage(message);
 
-        alertDialog.setButton(DialogInterface.BUTTON_POSITIVE, "Réessayer", new DialogInterface.OnClickListener() {
+        alertDialog.setButton(DialogInterface.BUTTON_POSITIVE, action, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
 
@@ -164,13 +186,19 @@ public class MainActivity extends AppCompatActivity {
 
         if (!hasInternet()) {
 
-            showDialog();
+            showDialog("Connexion réseau indisponible", "Réessayer");
+        }else if(!checkPreferences()){
+
+            showDialog("Informations érronées", "Configurer");
+
         }else{
-            loginTask.execute(url);
+           loginTask.execute();
         }
     }
 
     private void keepSessionAlive(){
+
+        keepSessionTask = new KeepSessionTask(server, username, password);
 
         long delay = 1000*60*5;
 
@@ -179,11 +207,35 @@ public class MainActivity extends AppCompatActivity {
         timer.schedule(new TimerTask() {
             @Override
             public void run() {
-                new ReLoginTask(MainActivity.this).execute(url);
 
+                keepSessionTask.execute();
             }
         },delay, delay);
+    }
 
+    private void setupSharedPreferences(){
 
+        preferences = MainActivity.this.getPreferences(Context.MODE_PRIVATE);
+
+        username = preferences.getString("username", "");
+        password = preferences.getString("password", "");
+        server = preferences.getString("server", "");
+    }
+
+    private boolean checkPreferences() {
+
+        if ("".equals(username) || username == null) {
+            return false;
+        }
+
+        if ("".equals(password) || password == null) {
+            return false;
+        }
+
+        if ("".equals(server) || server == null) {
+            return false;
+        }
+
+        return true;
     }
 }

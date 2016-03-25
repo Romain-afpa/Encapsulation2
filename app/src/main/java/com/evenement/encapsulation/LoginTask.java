@@ -38,15 +38,19 @@ public class LoginTask extends AsyncTask<String, String, String> {
     private Context context;
     private ProgressDialog dialog;
     private String formAction;
-    private final String username = "librinfo";
-    private final String password = "cR4MP0u=€";
-    private String _URL;
+    private String username;
+    private String password;
+    private String server;
+    private final String uri = "/tck.php/ticket/control";
 
 
-    public LoginTask(WebView webView, Context context) {
+    public LoginTask(WebView webView, Context context, String server, String username, String password) {
 
         this.webView = webView;
         this.context = context;
+        this.username = username;
+        this.password = password;
+        this.server = server;
     }
 
     @Override
@@ -58,9 +62,7 @@ public class LoginTask extends AsyncTask<String, String, String> {
     @Override
     protected String doInBackground(String... params) {
 
-        _URL = params[0];
-
-        login(_URL);
+        login(server + uri);
 
         return "";
     }
@@ -69,7 +71,13 @@ public class LoginTask extends AsyncTask<String, String, String> {
     protected void onPostExecute(String data) {
         super.onPostExecute(data);
 
-        webView.loadUrl("https://dev3.libre-informatique.fr/tck.php/ticket/control");
+
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        webView.loadUrl(server + uri);
         hideProgressDialog();
     }
 
@@ -102,44 +110,48 @@ public class LoginTask extends AsyncTask<String, String, String> {
 
     private InputStream getConnectionStream(String uri) {
 
-        try {
+        if (username != null & password != null & server != null) {
 
-            url = new URL(uri);
+            try {
 
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        }
+                url = new URL(uri);
 
-        assignTrustManager();
-
-        try {
-
-            connection = (HttpsURLConnection) url.openConnection();
-            connection.setDoInput(true);
-            connection.setRequestMethod("GET");
-
-            connection.connect();
-
-            switch (connection.getResponseCode()) {
-
-                case 200:
-                    stream = connection.getInputStream();
-                    break;
-
-                case 401:
-                    stream = connection.getErrorStream();
-                    break;
-
-                default:
-                    stream = connection.getErrorStream();
-                    break;
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
             }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return stream;
-    }
 
+            assignTrustManager();
+
+            try {
+
+                connection = (HttpsURLConnection) url.openConnection();
+                connection.setDoInput(true);
+                connection.setRequestMethod("GET");
+
+                connection.connect();
+
+                switch (connection.getResponseCode()) {
+
+                    case 200:
+                        stream = connection.getInputStream();
+                        break;
+
+                    case 401:
+                        stream = connection.getErrorStream();
+                        break;
+
+                    default:
+                        stream = connection.getErrorStream();
+                        break;
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return stream;
+        }
+
+        return null;
+    }
     private void assignTrustManager() {
 
         TrustManager manager = new TrustManager();
@@ -174,7 +186,7 @@ public class LoginTask extends AsyncTask<String, String, String> {
         URL url = null;
 
         try {
-            url = new URL(uri);
+            url = new URL(uri + formAction);
 
             assignTrustManager();
 
@@ -194,7 +206,7 @@ public class LoginTask extends AsyncTask<String, String, String> {
 
             connection.connect();
 
-            Log.d("aa", "cookiePost: " + CookieManager.getInstance().getCookie("https://dev3.libre-informatique.fr"));
+            Log.d("aa", "cookiePost: " + CookieManager.getInstance().getCookie(server));
             Log.d("aa", connection.getResponseCode() + "");
             Log.d("aa", connection.getResponseMessage() + "");
 

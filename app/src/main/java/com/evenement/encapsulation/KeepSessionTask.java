@@ -1,7 +1,5 @@
 package com.evenement.encapsulation;
 
-import android.app.ProgressDialog;
-import android.content.Context;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.util.Log;
@@ -27,33 +25,29 @@ import javax.net.ssl.SSLContext;
 /**
  * Created by romain on 21/03/16.
  */
-public class ReLoginTask extends AsyncTask<String, String, String> {
+public class KeepSessionTask extends AsyncTask<String, String, String> {
 
     private HttpsURLConnection connection = null;
     private URL url = null;
     private InputStream stream = null;
     private String csrfToken;
-    private Context context;
-    private ProgressDialog dialog;
     private String formAction;
-    private final String username = "librinfo";
-    private final String password = "cR4MP0u=€";
-    private String _URL;
+    private String username;
+    private String password;
+    private String server;
 
 
-    public ReLoginTask(Context context) {
+    public KeepSessionTask(String server, String username, String password) {
 
-        this.context = context;
+        this.username = username;
+        this.password = password;
+        this.server = server;
     }
 
     @Override
     protected String doInBackground(String... params) {
 
-        Log.d("aa", "execute");
-
-        _URL = params[0];
-
-        login(_URL);
+        login(server);
 
         return "";
     }
@@ -93,44 +87,48 @@ public class ReLoginTask extends AsyncTask<String, String, String> {
 
     private InputStream getConnectionStream(String uri) {
 
-        try {
+        if (username != null & password != null & server != null) {
 
-            url = new URL(uri);
+            try {
 
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        }
+                url = new URL(uri);
 
-        assignTrustManager();
-
-        try {
-
-            connection = (HttpsURLConnection) url.openConnection();
-            connection.setDoInput(true);
-            connection.setRequestMethod("GET");
-
-            connection.connect();
-
-            switch (connection.getResponseCode()) {
-
-                case 200:
-                    stream = connection.getInputStream();
-                    break;
-
-                case 401:
-                    stream = connection.getErrorStream();
-                    break;
-
-                default:
-                    stream = connection.getErrorStream();
-                    break;
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
             }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return stream;
-    }
 
+            assignTrustManager();
+
+            try {
+
+                connection = (HttpsURLConnection) url.openConnection();
+                connection.setDoInput(true);
+                connection.setRequestMethod("GET");
+
+                connection.connect();
+
+                switch (connection.getResponseCode()) {
+
+                    case 200:
+                        stream = connection.getInputStream();
+                        break;
+
+                    case 401:
+                        stream = connection.getErrorStream();
+                        break;
+
+                    default:
+                        stream = connection.getErrorStream();
+                        break;
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return stream;
+        }
+
+        return null;
+    }
     private void assignTrustManager() {
 
         TrustManager manager = new TrustManager();
@@ -162,7 +160,6 @@ public class ReLoginTask extends AsyncTask<String, String, String> {
     private boolean postLogin(String uri) {
 
         InputStream input = null;
-
         URL url = null;
 
         try {
