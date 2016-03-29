@@ -4,8 +4,6 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.net.Uri;
 import android.os.AsyncTask;
-import android.util.Log;
-import android.webkit.CookieManager;
 import android.webkit.WebView;
 
 import org.jsoup.Jsoup;
@@ -28,7 +26,7 @@ import javax.net.ssl.SSLContext;
 /**
  * Created by romain on 21/03/16.
  */
-public class LoginTask extends AsyncTask<String, String, String> {
+public class LoginTask extends AsyncTask<String, String, Boolean> {
 
     private HttpsURLConnection connection = null;
     private URL url = null;
@@ -60,52 +58,53 @@ public class LoginTask extends AsyncTask<String, String, String> {
     }
 
     @Override
-    protected String doInBackground(String... params) {
+    protected Boolean doInBackground(String... params) {
 
         login(server + uri);
 
-        return "";
+        return login(server + uri);
     }
 
     @Override
-    protected void onPostExecute(String data) {
-        super.onPostExecute(data);
+    protected void onPostExecute(Boolean statut) {
+        super.onPostExecute(statut);
 
-
-        try {
-            Thread.sleep(2000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        if (statut) {
+            webView.loadUrl(server + uri);
+            hideProgressDialog();
         }
-        webView.loadUrl(server + uri);
-        hideProgressDialog();
+
     }
 
     private String readStream(InputStream stream) {
 
-        BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
+        if (stream != null) {
 
-        StringBuffer buffer = new StringBuffer();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
 
-        String line = "";
+            StringBuffer buffer = new StringBuffer();
 
-        try {
-            while ((line = reader.readLine()) != null) {
-                buffer.append(line);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+            String line = "";
 
-        if (reader != null) {
             try {
-                reader.close();
+                while ((line = reader.readLine()) != null) {
+                    buffer.append(line);
+                }
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        }
 
-        return buffer.toString();
+            if (reader != null) {
+                try {
+                    reader.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            return buffer.toString();
+        }
+        return null;
     }
 
     private InputStream getConnectionStream(String uri) {
@@ -130,10 +129,19 @@ public class LoginTask extends AsyncTask<String, String, String> {
 
                 connection.connect();
 
-                switch (connection.getResponseCode()) {
+                int statusCode;
+                try {
+                    statusCode = connection.getResponseCode();
+
+                } catch (IOException e) {
+                    statusCode = connection.getResponseCode();
+                }
+
+                switch (statusCode) {
 
                     case 200:
                         stream = connection.getInputStream();
+
                         break;
 
                     case 401:
@@ -144,7 +152,7 @@ public class LoginTask extends AsyncTask<String, String, String> {
                         stream = connection.getErrorStream();
                         break;
                 }
-            } catch (IOException e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
             return stream;
@@ -152,6 +160,7 @@ public class LoginTask extends AsyncTask<String, String, String> {
 
         return null;
     }
+
     private void assignTrustManager() {
 
         TrustManager manager = new TrustManager();
@@ -206,16 +215,13 @@ public class LoginTask extends AsyncTask<String, String, String> {
 
             connection.connect();
 
-            Log.d("aa", "cookiePost: " + CookieManager.getInstance().getCookie(server));
-            Log.d("aa", connection.getResponseCode() + "");
-            Log.d("aa", connection.getResponseMessage() + "");
-
             if (connection.getResponseCode() == 200) {
 
                 return true;
             }
         } catch (Exception e) {
             e.printStackTrace();
+            return false;
         }
         return false;
     }
@@ -234,24 +240,28 @@ public class LoginTask extends AsyncTask<String, String, String> {
 
         String html = readStream(getConnectionStream(url));
 
-        parseResponse(html);
+        if (html != null) {
+            parseResponse(html);
 
-        return postLogin(url);
+            return postLogin(url);
+        }
+        return false;
     }
 
-    private void showProgressDialog(){
+    private void showProgressDialog() {
 
-        if(dialog == null) {
+        if (dialog == null) {
             dialog = new ProgressDialog(context);
             dialog.setTitle(context.getString(R.string.progressDialogTitle));
             dialog.setMessage(context.getString(R.string.progressDialogMessage));
+            dialog.setCancelable(false);
         }
         dialog.show();
     }
 
     private void hideProgressDialog() {
 
-        if(dialog.isShowing()){
+        if (dialog.isShowing()) {
 
             dialog.hide();
         }

@@ -1,5 +1,7 @@
 package com.evenement.encapsulation;
 
+import android.util.Log;
+
 import java.io.IOException;
 import java.net.CookieManager;
 import java.net.CookiePolicy;
@@ -43,6 +45,7 @@ public class WebCookieManager extends CookieManager
             // process each of the headers
             for (String headerValue : responseHeaders.get(headerKey))
             {
+                Log.d("aa", "putCookie" + headerValue);
                 this.webkitCookieManager.setCookie(url, headerValue);
             }
         }
@@ -62,17 +65,10 @@ public class WebCookieManager extends CookieManager
 
         // get the cookie
         String cookie = this.webkitCookieManager.getCookie(url);
-
+Log.d("aa", "getCookie" + cookie);
         // return it
         if (cookie != null) res.put("Cookie", Arrays.asList(cookie));
         return res;
-    }
-
-    @Override
-    public CookieStore getCookieStore()
-    {
-        // we don't want anyone to work with this cookie store directly
-        throw new UnsupportedOperationException();
     }
 }
 

@@ -33,12 +33,13 @@ import java.util.Date;
 import java.util.Timer;
 import java.util.TimerTask;
 
-public class MainActivity extends AppCompatActivity {
+import static android.support.v4.view.GravityCompat.*;
+
+public class MainActivity extends AppCompatActivity implements DrawerI{
 
     private WebView webView;
     private WebSettings settings;
     private LoginTask loginTask;
-    private KeepSessionTask keepSessionTask;
     private SharedPreferences preferences;
     private String username;
     private String password;
@@ -51,13 +52,13 @@ public class MainActivity extends AppCompatActivity {
 
         setupSharedPreferences();
 
-SharedPreferences.Editor editor= preferences.edit();
 
-        editor.remove("username");
-        editor.remove("password");
-        editor.remove("server");
-        editor.clear();
-        editor.commit();
+        //SharedPreferences.Editor editor= preferences.edit();
+        //editor.remove("username");
+        //editor.remove("password");
+        //editor.remove("server");
+        //editor.clear();
+        //editor.commit();
 
         setupCookieManager();
 
@@ -68,8 +69,6 @@ SharedPreferences.Editor editor= preferences.edit();
         loginTask = new LoginTask(webView, MainActivity.this, server, username, password);
 
         checkNetwork();
-
-        keepSessionAlive();
 
         //actionbar
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
@@ -87,7 +86,7 @@ SharedPreferences.Editor editor= preferences.edit();
         //DrawerFragment
         getFragmentManager()
                 .beginTransaction()
-                .replace(R.id.content_frame_new, new LeftFragment(drawer),
+                .replace(R.id.content_frame_new, new LeftFragment( ),
                         "LeftFragment").commit();
 
     }
@@ -95,8 +94,8 @@ SharedPreferences.Editor editor= preferences.edit();
     @Override
     public void onBackPressed() {
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        if (drawer.isDrawerOpen(GravityCompat.START)) {
-            drawer.closeDrawer(GravityCompat.START);
+        if (drawer.isDrawerOpen(START)) {
+            drawer.closeDrawer(START);
         } else {
             super.onBackPressed();
         }
@@ -137,7 +136,7 @@ SharedPreferences.Editor editor= preferences.edit();
 
     private void setupCookieManager() {
 
-        android.webkit.CookieSyncManager.createInstance(MainActivity.this);
+        CookieSyncManager.createInstance(MainActivity.this);
 
         android.webkit.CookieManager.getInstance().setAcceptCookie(true);
 
@@ -149,7 +148,8 @@ SharedPreferences.Editor editor= preferences.edit();
     private void showDialog(String message, String action) {
         AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
         AlertDialog alertDialog = builder.create();
-
+        final String actionParam = action;
+        alertDialog.setCancelable(false);
         alertDialog.setTitle("Erreur réseau");
         alertDialog.setMessage(message);
 
@@ -157,10 +157,15 @@ SharedPreferences.Editor editor= preferences.edit();
             @Override
             public void onClick(DialogInterface dialog, int which) {
 
-                checkNetwork();
+                if(actionParam.equals("Configurer")){
+
+                    drawer.openDrawer(START);
+                }else {
+                    checkNetwork();
+                }
             }
         });
-        alertDialog.setButton(DialogInterface.BUTTON_NEGATIVE, "Annuler", new DialogInterface.OnClickListener() {
+        alertDialog.setButton(DialogInterface.BUTTON_NEGATIVE, "Quitter", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
 
@@ -192,13 +197,14 @@ SharedPreferences.Editor editor= preferences.edit();
             showDialog("Informations érronées", "Configurer");
 
         }else{
+
+            keepSessionAlive();
+
            loginTask.execute();
         }
     }
 
     private void keepSessionAlive(){
-
-        keepSessionTask = new KeepSessionTask(server, username, password);
 
         long delay = 1000*60*5;
 
@@ -208,9 +214,9 @@ SharedPreferences.Editor editor= preferences.edit();
             @Override
             public void run() {
 
-                keepSessionTask.execute();
+               new KeepSessionTask(server, username, password).execute();
             }
-        },delay, delay);
+        },0, delay);
     }
 
     private void setupSharedPreferences(){
@@ -237,5 +243,15 @@ SharedPreferences.Editor editor= preferences.edit();
         }
 
         return true;
+    }
+
+    @Override
+    public void openDrawer() {
+        drawer.openDrawer(START);
+    }
+
+    @Override
+    public void closeDrawer() {
+        drawer.closeDrawer(Gravity.LEFT);
     }
 }

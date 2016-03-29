@@ -2,8 +2,6 @@ package com.evenement.encapsulation;
 
 import android.net.Uri;
 import android.os.AsyncTask;
-import android.util.Log;
-import android.webkit.CookieManager;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -22,10 +20,7 @@ import java.net.URL;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 
-/**
- * Created by romain on 21/03/16.
- */
-public class KeepSessionTask extends AsyncTask<String, String, String> {
+public class KeepSessionTask extends AsyncTask<String, String, Boolean> {
 
     private HttpsURLConnection connection = null;
     private URL url = null;
@@ -35,6 +30,7 @@ public class KeepSessionTask extends AsyncTask<String, String, String> {
     private String username;
     private String password;
     private String server;
+    private final String uri = "/tck.php/ticket/control";
 
 
     public KeepSessionTask(String server, String username, String password) {
@@ -45,44 +41,52 @@ public class KeepSessionTask extends AsyncTask<String, String, String> {
     }
 
     @Override
-    protected String doInBackground(String... params) {
-
-        login(server);
-
-        return "";
+    protected void onPreExecute() {
+        super.onPreExecute();
     }
 
     @Override
-    protected void onPostExecute(String data) {
-        super.onPostExecute(data);
+    protected Boolean doInBackground(String... params) {
 
+        login(server + uri);
+
+        return login(server + uri);
+    }
+
+    @Override
+    protected void onPostExecute(Boolean statut) {
+        super.onPostExecute(statut);
     }
 
     private String readStream(InputStream stream) {
 
-        BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
+        if(stream != null) {
 
-        StringBuffer buffer = new StringBuffer();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
 
-        String line = "";
+            StringBuffer buffer = new StringBuffer();
 
-        try {
-            while ((line = reader.readLine()) != null) {
-                buffer.append(line);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+            String line = "";
 
-        if (reader != null) {
             try {
-                reader.close();
+                while ((line = reader.readLine()) != null) {
+                    buffer.append(line);
+                }
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        }
 
-        return buffer.toString();
+            if (reader != null) {
+                try {
+                    reader.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            return buffer.toString();
+        }
+        return null;
     }
 
     private InputStream getConnectionStream(String uri) {
@@ -107,10 +111,19 @@ public class KeepSessionTask extends AsyncTask<String, String, String> {
 
                 connection.connect();
 
-                switch (connection.getResponseCode()) {
+                int statusCode;
+                try {
+                    statusCode = connection.getResponseCode();
+
+                } catch (IOException e) {
+                    statusCode = connection.getResponseCode();
+                }
+
+                switch (statusCode) {
 
                     case 200:
                         stream = connection.getInputStream();
+
                         break;
 
                     case 401:
@@ -121,7 +134,7 @@ public class KeepSessionTask extends AsyncTask<String, String, String> {
                         stream = connection.getErrorStream();
                         break;
                 }
-            } catch (IOException e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
             return stream;
@@ -163,7 +176,7 @@ public class KeepSessionTask extends AsyncTask<String, String, String> {
         URL url = null;
 
         try {
-            url = new URL(uri);
+            url = new URL(uri + formAction);
 
             assignTrustManager();
 
@@ -183,16 +196,13 @@ public class KeepSessionTask extends AsyncTask<String, String, String> {
 
             connection.connect();
 
-            Log.d("aa", "cookiePost: " + CookieManager.getInstance().getCookie("https://dev3.libre-informatique.fr"));
-            Log.d("aa", connection.getResponseCode() + "");
-            Log.d("aa", connection.getResponseMessage() + "");
-
             if (connection.getResponseCode() == 200) {
 
                 return true;
             }
         } catch (Exception e) {
             e.printStackTrace();
+            return false;
         }
         return false;
     }
@@ -211,8 +221,11 @@ public class KeepSessionTask extends AsyncTask<String, String, String> {
 
         String html = readStream(getConnectionStream(url));
 
-        parseResponse(html);
+        if (html != null) {
+            parseResponse(html);
 
-        return postLogin(url);
+            return postLogin(url);
+        }
+        return false;
     }
 }//taskClass

@@ -4,8 +4,6 @@ import android.app.Fragment;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.support.v4.widget.DrawerLayout;
-import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -15,18 +13,11 @@ import android.widget.EditText;
 
 public class LeftFragment extends Fragment implements View.OnClickListener{
 
-    private DrawerLayout drawer;
     private Button loginBtn;
     private EditText user;
     private EditText pass;
     private EditText server;
-
-    public LeftFragment(){}
-
-    public LeftFragment(DrawerLayout drawer){
-
-        this.drawer = drawer;
-    }
+    private DrawerI interfaceDrawer;
 
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -63,9 +54,23 @@ public class LeftFragment extends Fragment implements View.OnClickListener{
 
         editor.commit();
 
-        drawer.closeDrawer(Gravity.LEFT);
-
+        try {
+            interfaceDrawer.closeDrawer();
+        }catch(NullPointerException e){
+            e.printStackTrace();
+        }
         WebView webView = (WebView) getActivity().findViewById(R.id.webview);
        new LoginTask(webView, getActivity(),server, username, password ).execute();
+    }
+
+    @Override
+    public void onAttach(Context context) {
+        super.onAttach(context);
+
+        try {
+            interfaceDrawer = (DrawerI) context;
+        } catch (ClassCastException e) {
+           e.printStackTrace();
+        }
     }
 }
